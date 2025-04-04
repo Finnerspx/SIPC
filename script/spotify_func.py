@@ -75,10 +75,10 @@ def display_search_results(results, search_type='track'):
                         print(f"   Image URL: No image available")
 
                 print("-" * 20)
-            else:
-                print("No results found.")
         else:
-            print("Search failed.")
+            print("No results found.")
+    else:
+        print("Search failed.")
 
 def get_recommendations(sp, seed_artists=None, seed_tracks=None, seed_genres=None, limit=10, **kwargs):
 

@@ -64,3 +64,18 @@ if sp:
 
 srch_result = spf.search_spotify(sp, "kendrick")
 spf.display_search_results(srch_result)
+
+'''
+GEMINI INTEGRATION
+Configure Gemini Client with API Key
+'''
+
+genai.configure(api_key=gemini_api_key)
+model = genai.GenerativeModel('gemini-1.5-pro')
+
+'''
+    Simple test prompt below
+'''
+
+response = model.generate_content("What was the original capital of england?")
+#print(response.text)
