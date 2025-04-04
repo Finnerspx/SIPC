@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import spotify_func as spf
 import google.generativeai as genai
+import genai_model as gm
 
 spotify_client_id = os.getenv('SPOTIFY_CLIENT_ID')
 spotify_client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -75,7 +76,13 @@ model = genai.GenerativeModel('gemini-1.5-pro')
 
 '''
     Simple test prompt below
+    Uncomment to test
 '''
-
-response = model.generate_content("What was the original capital of england?")
+#response = model.generate_content("What was the original capital of england?")
 #print(response.text)
+
+# user_input = "create me a chill playlist"
+# response_result = gm.get_response_from_model(user_input, model)
+# print(response_result)
+
+gm.user_engagement_playlist(model)
