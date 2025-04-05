@@ -2,6 +2,9 @@ import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
+
+from script.spotify_func import add_tracks_to_playlist
+
 load_dotenv()
 import spotify_func as spf
 import google.generativeai as genai
@@ -50,6 +53,9 @@ try:
     user_profile = sp.current_user() # Test call to verify authentication
     print(f"Successfully authenticated as: {user_profile['display_name']}")
     user_id = user_profile['id']
+
+    #New
+
 except Exception as e:
     print(f"Error during spotify auth: {e}")
     print("Could not authenticate with spotify. Please check")
@@ -62,17 +68,43 @@ except Exception as e:
 if sp:
     print(f"Spotify User ID: {user_id}")
     print("\nReady to proceed with next steps. ")
+    genai.configure(api_key=gemini_api_key)
+    model = genai.GenerativeModel('gemini-1.5-pro')
 
-srch_result = spf.search_spotify(sp, "kendrick")
-spf.display_search_results(srch_result)
+    parsed_data = gm.user_engagement_take2(model)
+    print(parsed_data)
+    if parsed_data:
+        print("\nProceeding to Spotify Interaction...")
+        recommendation_data_spotify = spf.get_spotify_recommendations_new(sp, parsed_data, limit=40 )
+
+        if recommendation_data_spotify:
+            playlist_name = spf.generate_playlist_name(parsed_data, default_name="AI Generated Vibes")
+
+            playlist_id, playlist_url = spf.create_spotify_playlist_new(sp, user_id,
+                                                                        playlist_name)  # create empty playlist
+            if playlist_id:
+                success = add_tracks_to_playlist(sp, playlist_id, recommendation_data_spotify)
+                if success:
+                    print("PLAYLIST CREATION COMPLETE WHOOP")
+                    print(f"\n**** Playlist Name: {playlist_name}")
+                    print(f"\n**** Check it out here: {playlist_url}")
+                else:
+                    print("\n--- Playlist Generation Failed: Could not add tracks. ---")
+            else:
+                print("\n--- Playlist Generation Failed: Could not create playlist. ---")
+
+
+
+# srch_result = spf.search_spotify(sp, "kendrick")
+# spf.display_search_results(srch_result)
 
 '''
 GEMINI INTEGRATION
 Configure Gemini Client with API Key
 '''
-
-genai.configure(api_key=gemini_api_key)
-model = genai.GenerativeModel('gemini-1.5-pro')
+#
+# genai.configure(api_key=gemini_api_key)
+# model = genai.GenerativeModel('gemini-1.5-pro')
 
 '''
     Simple test prompt below
@@ -85,6 +117,7 @@ model = genai.GenerativeModel('gemini-1.5-pro')
 # response_result = gm.get_response_from_model(user_input, model)
 # print(response_result)
 
+"""
 parsed_data = gm.user_engagement_playlist(model)
 track_uris = spf.get_spotify_track_uris(parsed_data, sp)
 if track_uris:
@@ -92,3 +125,9 @@ if track_uris:
     print(f"Playlist Created: {playlist['external_urls']['spotify']}")
 else:
     print("Could not find any tracks to create a playlist")
+"""
+
+
+
+
+#Potential to generate a description.

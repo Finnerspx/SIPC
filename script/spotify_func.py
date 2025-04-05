@@ -1,3 +1,4 @@
+import spotify.client
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -119,3 +120,110 @@ def get_spotify_track_uris(parsed_data, sp):
     return track_uris
 
 
+def get_spotify_recommendations_new(sp, model_data, limit=30):
+    """
+    Takes Model response data and fetches track recommendations from Spotify
+    :param sp: Authenticated Spotify Client Instance
+    :param model_data: (dict) Parsed data from model (gemini)
+    :param limit: (int) Max number of tracks to recommend
+    :return: A list of Spotify track URIs, or an empty list if none found/error
+    """
+    print("Translating into Spotify recommendations...")
+
+    recommendation_args = {'limit': limit}
+
+    #1.Seed Data (Genres, Artists, Tracks) - Nax 5 seeds in total!
+    seed_genres = model_data.get('seed_genres', [])
+    seed_artists = model_data.get('seed_artists', [])
+    seed_tracks = model_data.get('seed_tracks', [])
+
+    #Combine seeds, respecting the 5-seed limit
+    seed_count = 0
+    if seed_genres:
+        recommendation_args['seed_genres'] = seed_genres[:5]
+        seed_count += len(recommendation_args['seed_genres'])
+    if seed_artists and seed_count < 5:
+        recommendation_args['seed_artists'] = seed_artists[:(5 - seed_count)]
+        seed_count += len(recommendation_args['seed_artists'])
+    if seed_tracks and seed_count < 5:
+        recommendation_args['seed_tracks'] =  seed_tracks[:(5 - seed_count)]
+
+    if seed_count == 0:
+        print("Warning: No seed genres, artists, or tracks provided.")
+
+    #2. Target Audio Features
+    target_features = model_data.get('target_audio_features', {})
+    if target_features:
+        if 'energy' in target_features: recommendation_args['target_energy'] = float(target_features['energy'])
+        if 'danceability' in target_features: recommendation_args['target_danceability'] = float(target_features['danceability'])
+        if 'valence' in target_features: recommendation_args['target_valence'] = float(target_features['valence'])
+        if 'instrumentalness' in target_features: recommendation_args['target_instrumentalness'] = float(target_features['instrumentalness'])
+        if 'acousticness' in target_features: recommendation_args['target_acousticness'] = float(target_features['acousticness'])
+
+
+    try:
+        result_test = sp.recommendations(**recommendation_args)
+        track_uris = [track['uri'] for track in result_test['tracks']]
+        if not track_uris:
+            print("Spotify returned no recommendations")
+            return []
+
+        print(f"Found {len(track_uris)} recommended tracks")
+        return track_uris
+    except Exception as e:
+        print(f"Error getting recommendations: {e}")
+        return []
+
+def create_spotify_playlist_new(sp_client, user_id, playlist_name, description=""):
+    """
+    Creates empty playlist for the user.
+    :param sp_client:
+    :param user_id:
+    :param playlist_name:
+    :param description:
+    :return:
+    """
+
+    try:
+        playlist = sp_client.user_playlist_create(
+            user = user_id,
+            name = playlist_name,
+            public=False,
+            description=description
+        )
+        playlist_id =playlist['id']
+        playlist_url = playlist['external_urls']['spotify']
+        print(f"Return URL: {playlist_url}")
+        return playlist_id, playlist_url
+    except Exception as e:
+        print(f"Error creating playlist: {e}")
+        return None, None
+
+
+def generate_playlist_name(model_data, default_name="AI Generated Toones"):
+    """Generates a name based on Gemini keywords or uses a default."""
+    keywords = model_data.get('keywords, []')
+    if keywords:
+        return " ".join(k.capitalize() for k in keywords) + " Toon"
+
+    return default_name
+
+def add_tracks_to_playlist(sp_client, playlist_id, track_uris):
+
+    if not track_uris:
+        print("No tracks to add.")
+        return False
+    if not playlist_id:
+        print(f"Invalid playlist id. {playlist_id}. Cannot add tracks")
+        return False
+
+    print(f"Adding {len(track_uris)} to Playlist ID: {playlist_id}")
+    try:
+        for i in range(0, len(track_uris), 100):
+            chunk = track_uris[i:i + 100]
+            sp_client.playlist_add_items(playlist_id, chunk)
+        print ("Beats: Yooo! Track added successfully!")
+        return True
+    except Exception as e:
+        print(f"Error Handling: {e}")
+        return False
