@@ -98,3 +98,24 @@ def display_recommendations(recommendations):
             print("-" * 20)
         else:
             print("No Recommendations Found")
+
+def create_playlist(sp, user_id, playlist_name, track_uris):
+    playlist = sp.user_playlist_create(user_id, playlist_name)
+    sp.playlist_add_items(playlist['id'], track_uris)
+    return playlist
+
+def get_spotify_track_uris(parsed_data, sp):
+    track_uris = []
+    if parsed_data:
+        if parsed_data.get('seed_genres') or parsed_data.get('seed_artists') or parsed_data.get('seed_tracks') or parsed_data.get('target_audio_features'):
+            recommendations = sp.recommendations(seed_genres=parsed_data.get('seed_genres'),
+                                                 seed_artists=parsed_data.get('seed_artists'),
+                                                 seed_tracks=parsed_data.get('seed_tracks'),
+                                                 target_audio_features=parsed_data.get('target_audio_features'))
+            if parsed_data.get('keywords'):
+                for keyword in parsed_data['keywords']:
+                    results = sp.search(q=keyword, type='track', limit=10)
+                    track_uris.extend([track['uri'] for track in results['tracks']])
+    return track_uris
+
+

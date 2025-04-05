@@ -33,11 +33,12 @@ def user_engagement_playlist(model):
             # process the playlist description with the gemini function created in the previous answer.
             parsed_data = parse_model_response(create_prompt_for_model(playlist_description))
 
+
             if parsed_data:
                 #Code to create the playlist using the parsed data
                 print("Creating playlist...")
                 print("Playlist created!")
-                break
+                return parsed_data
             else:
                 print("Could not do it try again")
 
@@ -45,6 +46,7 @@ def user_engagement_playlist(model):
             # Code to confirm playlist creation with the user
             pass
         elif state == "done":
+            print("hi")
             break
         else:
             print(f"Invalid state:  {state}")
@@ -53,7 +55,7 @@ def user_engagement_playlist(model):
 
 def create_prompt_for_model(user_input):
     prompt = f"""
-    You are an expert music curator and you have a passion to help others make the best playlist possible. Analyse the user's request for a Spotify playlist and extract parameters suitable for the Spotify API's recommendation engine. Provide output as a JSON object. 
+    Analyse the user's request for a Spotify playlist and extract parameters suitable for the Spotify API's recommendation engine. Provide output as a JSON object. 
 
     Examples:
     User Request: "A chill playlist for studying"

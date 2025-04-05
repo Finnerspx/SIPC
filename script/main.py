@@ -85,4 +85,10 @@ model = genai.GenerativeModel('gemini-1.5-pro')
 # response_result = gm.get_response_from_model(user_input, model)
 # print(response_result)
 
-gm.user_engagement_playlist(model)
+parsed_data = gm.user_engagement_playlist(model)
+track_uris = spf.get_spotify_track_uris(parsed_data, sp)
+if track_uris:
+    playlist = spf.create_playlist(sp, user_id, "Gemini Created Playlist #1", track_uris)
+    print(f"Playlist Created: {playlist['external_urls']['spotify']}")
+else:
+    print("Could not find any tracks to create a playlist")
